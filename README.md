@@ -24,3 +24,4 @@ Specifies a date in `yyyy-mm-dd` format.
 If specified, only posts made after the specified date will be downloaded.
 ## Roadmap
 - Organizing logs
+- Organize fantia packages
