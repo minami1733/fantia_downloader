@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -26,6 +27,7 @@ func NewFantiaDownloader(cfg Config) (*FantiaDownloader, error) {
 var output string
 var overwrite bool
 var progress bool
+var date *time.Time = nil
 
 func SetOutput(dir string) {
 	output = dir
@@ -35,6 +37,17 @@ func SetOverwrite(opt bool) {
 }
 func SetProgress(opt bool) {
 	progress = opt
+}
+func SetDate(opt string) {
+	if opt == "" {
+		return
+	}
+
+	parse, err := time.Parse("2006-01-02", opt)
+	if err != nil {
+		return
+	}
+	date = &parse
 }
 
 func GetFanclubs(client *http.Client) (*fanclubs, error) {
@@ -176,7 +189,14 @@ func GetPost(client *http.Client, parent string, post_id int) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("% 4s%s - %s\n", RIGHT_ARROWS, post_date.Format(LOG_FORMAT_DATE), post.Post.Title)
+
+	if date != nil {
+		if !post_date.After(*date) {
+			return nil
+		}
+	}
+
+	log.Printf("% 4s%s - %s\n", RIGHT_ARROWS, post_date.Format(LOG_FORMAT_DATE), post.Post.Title)
 
 	// 投稿のタイトルからDirectoryに利用できない文字を置換
 	post_title := ForbiddenTextRename(post.Post.Title)
@@ -210,7 +230,7 @@ func GetPost(client *http.Client, parent string, post_id int) error {
 		// 最終的なディレクトリ名を作成 {output}/{fanclub_name}/{yyyy-mm-dd_hhmmss_{POST_TITLE}}/{001-contents_name}
 		post_content_root_dir := filepath.Join(post_root_dir, post_content_title)
 
-		fmt.Printf("% 6s%s\n", RIGHT_ARROWS, post_content_title)
+		log.Printf("% 6s%s\n", RIGHT_ARROWS, post_content_title)
 
 		post_content_root_dir = CutStringToLimit(post_content_root_dir, 245)
 		for retry := 0; retry < 3; retry++ {
@@ -233,7 +253,7 @@ func GetPost(client *http.Client, parent string, post_id int) error {
 				}
 
 				if progress {
-					fmt.Printf("% 8s%s\n", RIGHT_ARROWS, fname)
+					log.Printf("% 8s%s\n", RIGHT_ARROWS, fname)
 				}
 			}
 		}
@@ -243,7 +263,7 @@ func GetPost(client *http.Client, parent string, post_id int) error {
 			SaveURIToFile(client, path, FANTIA_BASE_URI+post_content.DownloadURI)
 
 			if progress {
-				fmt.Printf("% 8s%s\n", RIGHT_ARROWS, post_content.Filename)
+				log.Printf("% 8s%s\n", RIGHT_ARROWS, post_content.Filename)
 			}
 		}
 	}

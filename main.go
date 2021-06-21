@@ -17,6 +17,7 @@ var (
 	FantiaSessionID *string
 	FanclubID       *string
 	DownloadDir     *string
+	Date            *string
 	ExcludeFreePlan *bool
 	Overwrite       *bool
 	Progress        *bool
@@ -27,6 +28,7 @@ func init() {
 	FantiaSessionID = flag.String("key", "", "")
 	FanclubID = flag.String("fanclub", "", "")
 	DownloadDir = flag.String("output", "./downloads", "")
+	Date = flag.String("date", "", "")
 	ExcludeFreePlan = flag.Bool("excludeFreePlan", false, "")
 	Overwrite = flag.Bool("overwrite", false, "")
 	Progress = flag.Bool("progress", false, "")
@@ -70,6 +72,9 @@ func main() {
 	// 進捗の表示
 	// TODO (verboseにそのうち置き換え)
 	fantia.SetProgress(*Progress)
+
+	// 年月日指定
+	fantia.SetDate(*Date)
 
 	var fanclub int
 	if *FanclubID != "" {
