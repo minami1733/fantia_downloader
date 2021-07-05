@@ -25,3 +25,14 @@ If specified, only posts made after the specified date will be downloaded.
 ## Roadmap
 - Organizing logs
 - Organize fantia packages
+
+## Copyright and Disclaimer
+This software is free software and is made for personal use. Please use it freely only for personal use.
+The copyright of this software is held by the author, "あくあ".
+
+The author is in no way affiliated with とらのあな, Fantia, or Fantia Development.
+You may use this software at your own risk, provided that you do not violate the Fantia Terms of Use.
+
+I'm not responsible for any failure, damage, or defect caused by the use of this software.
+Please use the software at your own risk, as neither I, nor any of my associates, nor any group or organization to which I belong will be liable for any damage, loss, or defect caused by the use of the software.
+Please use this software at your own risk.
