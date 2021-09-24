@@ -167,32 +167,38 @@ func GetFanclubPage(client *http.Client, fanclub int) []int {
 
 	sort.Ints(results)
 
-	return removeDuplicateInt(results)
+	reverse := removeDuplicateInt(results)
+
+	for i := 0; i < len(reverse)/2; i++ {
+		reverse[i], reverse[len(reverse)-i-1] = reverse[len(reverse)-i-1], reverse[i]
+	}
+
+	return reverse
 }
 
-func GetPost(client *http.Client, parent string, post_id int) error {
+func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 	// 投稿を取得
 	resp, err := client.Get(fmt.Sprintf(FANTIA_API_POST_INFO, post_id))
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer HTTPResponseBodyCloser(resp)
 
 	post := new(PostData)
 	dec := json.NewDecoder(resp.Body)
 	if err := dec.Decode(post); err != nil {
-		return err
+		return false, err
 	}
 
 	// 投稿内の投稿日時を取得
 	post_date, err := time.Parse(time.RFC1123Z, post.Post.PostedAt)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if date != nil {
 		if !post_date.After(*date) {
-			return nil
+			return true, nil
 		}
 	}
 
@@ -267,5 +273,5 @@ func GetPost(client *http.Client, parent string, post_id int) error {
 			}
 		}
 	}
-	return nil
+	return false, nil
 }

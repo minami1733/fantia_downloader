@@ -100,7 +100,9 @@ func main() {
 		post_ids := fantia.GetFanclubPage(http.DefaultClient, fanclub_id)
 
 		for _, post_id := range post_ids {
-			if err := fantia.GetPost(http.DefaultClient, fanclub_name, post_id); err != nil {
+			if brk, err := fantia.GetPost(http.DefaultClient, fanclub_name, post_id); brk {
+				break
+			} else if err != nil {
 				log.Fatalln(err)
 			}
 		}
