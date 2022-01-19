@@ -17,15 +17,16 @@ import (
 )
 
 var ForbiddenItemMap map[string]string = map[string]string{
-	`\`: `￥`,
-	`/`: `／`,
-	`:`: `：`,
-	`*`: `＊`,
-	`?`: `？`,
-	`"`: `”`,
-	`<`: `＜`,
-	`>`: `＞`,
-	`|`: `｜`,
+	`\`:   `￥`,
+	`/`:   `／`,
+	`:`:   `：`,
+	`*`:   `＊`,
+	`?`:   `？`,
+	`"`:   `”`,
+	`<`:   `＜`,
+	`>`:   `＞`,
+	`|`:   `｜`,
+	`...`: `…`,
 }
 
 func ForbiddenTextRename(name string) string {
