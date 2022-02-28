@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var ForbiddenItemMap map[string]string = map[string]string{
@@ -85,13 +86,33 @@ func CutStringToLimit(input string, limit uint) string {
 	return strings.Trim(input, " ")
 }
 
-func SaveURIToFile(client *http.Client, file, uri string) error {
+func RetrySaveURIToFile(client *http.Client, file, uri string) error {
+	var err error
+	for i, interval := 1, retryInterval; i <= retry; i++ {
+		err = SaveURIToFile(client, file, uri)
+		if err == nil {
+			return nil
+		}
+		log.Printf("Retry wait time is %d seconds. error to %v. ", interval, err)
+
+		time.Sleep(time.Duration(interval) * time.Second)
+
+		if interval*2 > 300 {
+			interval = 300
+		} else {
+			interval *= 2
+		}
+	}
+	return err
+}
+
+func SaveURIToFile(client *http.Client, file, uri string) (err error) {
 	if _, err := os.Stat(file); err == nil {
 		return nil
 	}
 
 	dir, _ := filepath.Split(file)
-	_, err := isFolderExist(dir, true)
+	_, err = isFolderExist(dir, true)
 	if err != nil {
 		return err
 	}
@@ -112,6 +133,7 @@ func SaveURIToFile(client *http.Client, file, uri string) error {
 	if err != nil {
 		return err
 	}
+	defer CloseFile(f, err)
 
 	bw := bufio.NewWriter(f)
 	if _, err := bw.ReadFrom(resp.Body); err != nil {
@@ -120,19 +142,20 @@ func SaveURIToFile(client *http.Client, file, uri string) error {
 	if err := bw.Flush(); err != nil {
 		return err
 	}
-	if err := f.Close(); err != nil {
-		return err
-	}
 
 	return nil
 }
 
-func ConvertToJpeg(src string, dest string) error {
+func CloseFile(f *os.File, err error) {
+	err = f.Close()
+}
+
+func ConvertToJpeg(src string, dest string) (err error) {
 	file, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer CloseFile(file, err)
 
 	img, _, err := image.Decode(file)
 	if err != nil {
@@ -143,19 +166,19 @@ func ConvertToJpeg(src string, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer CloseFile(out, err)
 
 	opts := &jpeg.Options{Quality: 100}
 
 	return jpeg.Encode(out, img, opts)
 }
 
-func ConvertToJpegFromPng(src string, dest string) error {
+func ConvertToJpegFromPng(src string, dest string) (err error) {
 	file, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer CloseFile(file, err)
 
 	img, err := png.Decode(file)
 	if err != nil {
@@ -166,18 +189,19 @@ func ConvertToJpegFromPng(src string, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer CloseFile(out, err)
 
 	opts := &jpeg.Options{Quality: 100}
 
 	return jpeg.Encode(out, img, opts)
 }
-func ConvertToJpegFromGif(src string, dest string) error {
+
+func ConvertToJpegFromGif(src string, dest string) (err error) {
 	file, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer CloseFile(file, err)
 
 	img, err := gif.Decode(file)
 	if err != nil {
@@ -188,7 +212,7 @@ func ConvertToJpegFromGif(src string, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer CloseFile(out, err)
 
 	opts := &jpeg.Options{Quality: 100}
 
@@ -196,8 +220,9 @@ func ConvertToJpegFromGif(src string, dest string) error {
 }
 
 func DetectFileContentType(file string) string {
+	var err error
 	f, _ := os.Open(file)
-	defer f.Close()
+	defer CloseFile(f, err)
 
 	buffer := make([]byte, 512)
 	f.Read(buffer)
@@ -218,7 +243,7 @@ func MakeFolderIcon(client *http.Client, path, uri string) {
 		return
 	}
 	file := filepath.Join(path, fmt.Sprintf("folder.%s", ext))
-	SaveURIToFile(client, file, uri)
+	RetrySaveURIToFile(client, file, uri)
 
 	img := DetectFileContentType(file)
 

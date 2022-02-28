@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,7 +28,10 @@ func NewFantiaDownloader(cfg Config) (*FantiaDownloader, error) {
 var output string
 var overwrite bool
 var progress bool
+var waittime time.Duration
 var date *time.Time = nil
+var retry int = 5
+var retryInterval int
 
 func SetOutput(dir string) {
 	output = dir
@@ -48,6 +52,16 @@ func SetDate(opt string) {
 		return
 	}
 	date = &parse
+}
+func SetWaitTime(opt int) {
+	waittime = time.Millisecond * time.Duration(opt)
+}
+
+func SetRetry(opt int) {
+	retry = opt
+}
+func SetRetryInterval(opt int) {
+	retryInterval = opt
 }
 
 func GetFanclubs(client *http.Client) (*fanclubs, error) {
@@ -112,7 +126,9 @@ func GetFanclub(client *http.Client, fanclub int, exit bool) (string, error) {
 
 	// ファンクラブのサムネイル作成
 	if icon := fanclub_data.Fanclub.Icon.Original; icon != "" {
-		MakeFolderIcon(client, fanclub_path, icon)
+		if !strings.Contains(icon, "default") {
+			MakeFolderIcon(client, fanclub_path, icon)
+		}
 	}
 
 	return name, nil
@@ -254,7 +270,7 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 				fname := fmt.Sprintf("%03d.%s", idx+1, ext)
 				path := filepath.Join(post_content_root_dir, fname)
 
-				if err := SaveURIToFile(client, path, photo.URL.Original); err != nil {
+				if err := RetrySaveURIToFile(client, path, photo.URL.Original); err != nil {
 					panic(err)
 				}
 
@@ -266,12 +282,14 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 
 		if post_content.Filename != "" && post_content.DownloadURI != "" {
 			path := filepath.Join(post_content_root_dir, post_content.Filename)
-			SaveURIToFile(client, path, FANTIA_BASE_URI+post_content.DownloadURI)
+			RetrySaveURIToFile(client, path, FANTIA_BASE_URI+post_content.DownloadURI)
 
 			if progress {
 				log.Printf("% 8s%s\n", RIGHT_ARROWS, post_content.Filename)
 			}
 		}
+
+		time.Sleep(waittime)
 	}
 	return false, nil
 }

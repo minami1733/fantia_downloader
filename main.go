@@ -21,6 +21,7 @@ var (
 	ExcludeFreePlan *bool
 	Overwrite       *bool
 	Progress        *bool
+	WaitTime        *int
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	ExcludeFreePlan = flag.Bool("excludeFreePlan", false, "")
 	Overwrite = flag.Bool("overwrite", false, "")
 	Progress = flag.Bool("progress", false, "")
+	WaitTime = flag.Int("wait", 250, "")
 	flag.Parse()
 }
 
@@ -75,6 +77,12 @@ func main() {
 
 	// 年月日指定
 	fantia.SetDate(*Date)
+
+	// 待ち時間
+	fantia.SetWaitTime(*WaitTime)
+
+	fantia.SetRetry(10)
+	fantia.SetRetryInterval(10)
 
 	var fanclub int
 	if *FanclubID != "" {
