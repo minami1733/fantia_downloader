@@ -28,7 +28,7 @@ If specified, only posts made after the specified date will be downloaded.
 
 ## Copyright and Disclaimer
 This software is free software and is made for personal use. Please use it freely only for personal use.
-The copyright of this software is held by the author, "あくあ".
+The copyright of this software is held by the author, "minami1733".
 
 The author is in no way affiliated with とらのあな, Fantia, or Fantia Development.
 You may use this software at your own risk, provided that you do not violate the Fantia Terms of Use.
