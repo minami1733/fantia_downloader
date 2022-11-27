@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"
 
-	"aqua.cb/fantia_downloader/fantia"
+	"fantia_downloader/fantia"
 )
 
 var (

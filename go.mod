@@ -1,5 +1,3 @@
-module aqua.cb/fantia_downloader
+module fantia_downloader
 
-go 1.17
-
-replace aqua.cb/fantia => ./fantia
+go 1.19
