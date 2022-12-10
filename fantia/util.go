@@ -8,11 +8,11 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -30,7 +30,13 @@ var ForbiddenItemMap map[string]string = map[string]string{
 	`...`: `…`,
 }
 
+var bs *regexp.Regexp = regexp.MustCompile("\b")
+
 func ForbiddenTextRename(name string) string {
+	if bs.MatchString(name) {
+		name = bs.ReplaceAllString(name, "")
+	}
+
 	for key, val := range ForbiddenItemMap {
 		if !strings.Contains(name, key) {
 			continue
@@ -280,17 +286,17 @@ func MakeFolderIcon(client *http.Client, path, uri string) {
 		err = os.Remove(file)
 	}
 	if err != nil {
-		panic(err)
+		AddErrorLog(fmt.Sprintf("%s: %v", time.Now(), err))
 	}
 }
 
 func HTTPResponseBodyCloser(resp *http.Response) {
 	defer resp.Body.Close()
-	io.Copy(ioutil.Discard, resp.Body)
+	io.Copy(io.Discard, resp.Body)
 }
 
 func DirectoryChecker(parent, find string) bool {
-	list, err := ioutil.ReadDir(parent)
+	list, err := os.ReadDir(parent)
 	if err != nil {
 		return false
 	}

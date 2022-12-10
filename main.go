@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"time"
 
 	"fantia_downloader/fantia"
 )
@@ -43,10 +44,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	elf, err := os.OpenFile("./fantia_downloader_error.log", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	if err != nil {
+		panic(err)
+	}
+	fantia.SetErrorLog(elf)
+
 	mw := io.MultiWriter(os.Stdout, lf)
 	defer func() {
 		log.Println("[E N D] FantiaDownloader")
 		lf.Close()
+		elf.Close()
 	}()
 	log.SetOutput(mw)
 
@@ -111,8 +119,9 @@ func main() {
 			if brk, err := fantia.GetPost(http.DefaultClient, fanclub_name, post_id); brk {
 				break
 			} else if err != nil {
-				log.Fatalln(err)
+				io.WriteString(elf, err.Error())
 			}
+			time.Sleep(2 * time.Second)
 		}
 	}
 }

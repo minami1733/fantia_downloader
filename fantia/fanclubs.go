@@ -3,10 +3,13 @@ package fantia
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,6 +28,16 @@ func NewFantiaDownloader(cfg Config) (*FantiaDownloader, error) {
 	return &FantiaDownloader{}, nil
 }
 
+func SetErrorLog(f *os.File) {
+	errLog = f
+}
+
+func AddErrorLog(log string) {
+	io.WriteString(errLog, log)
+}
+
+var errLog *os.File
+
 var output string
 var overwrite bool
 var progress bool
@@ -34,7 +47,11 @@ var retry int = 5
 var retryInterval int
 
 func SetOutput(dir string) {
-	output = dir
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		panic(err)
+	}
+	output = filepath.Clean(abs)
 }
 func SetOverwrite(opt bool) {
 	overwrite = opt
@@ -148,7 +165,7 @@ func GetFanclubPage(client *http.Client, fanclub int) []int {
 				return nil
 			}
 
-			data, err := ioutil.ReadAll(resp.Body)
+			data, err := io.ReadAll(resp.Body)
 			if err != nil {
 				panic(err)
 			}
@@ -182,7 +199,6 @@ func GetFanclubPage(client *http.Client, fanclub int) []int {
 	}
 
 	sort.Ints(results)
-
 	reverse := removeDuplicateInt(results)
 
 	for i := 0; i < len(reverse)/2; i++ {
@@ -227,11 +243,13 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 	post_dir_title := fmt.Sprintf("%s-%s", post_date.Format(POST_DIR_FORMAT), post_title)
 
 	// 投稿名のDirectory作成 {output}/{fanclub_name}/{yyyy-mm-dd_hhmmss_{POST_TITLE}}
-	post_root_dir := CutStringToLimit(filepath.Join(output, parent, post_dir_title), 230)
+	// post_root_dir := CutStringToLimit(filepath.Join(output, parent, post_dir_title), 230)
+	post_root_dir := filepath.Join(output, parent, post_dir_title)
 
 	for retry := 0; retry < 3; retry++ {
 		if _, err := isFolderExist(post_root_dir, true); err != nil {
-			panic(err)
+			AddErrorLog(fmt.Sprintf("%s: %v", time.Now(), err))
+			return false, err
 		}
 		if DirectoryChecker(filepath.Join(output, parent), post_root_dir) {
 			break
@@ -254,10 +272,11 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 
 		log.Printf("% 6s%s\n", RIGHT_ARROWS, post_content_title)
 
-		post_content_root_dir = CutStringToLimit(post_content_root_dir, 245)
+		// post_content_root_dir = CutStringToLimit(post_content_root_dir, 245)
 		for retry := 0; retry < 3; retry++ {
 			if _, err := isFolderExist(post_content_root_dir, true); err != nil {
-				panic(err)
+				AddErrorLog(fmt.Sprintf("%s: %v", time.Now(), err))
+				return false, err
 			}
 			if DirectoryChecker(post_root_dir, post_content_root_dir) {
 				break
@@ -271,12 +290,33 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 				path := filepath.Join(post_content_root_dir, fname)
 
 				if err := RetrySaveURIToFile(client, path, photo.URL.Original); err != nil {
-					panic(err)
+					return false, err
 				}
 
 				if progress {
 					log.Printf("% 8s%s\n", RIGHT_ARROWS, fname)
 				}
+			}
+		} else if post_content.Comment != nil {
+			switch post_content.Comment.(type) {
+			case string:
+				s, ok := post_content.Comment.(string)
+				if !ok {
+					continue
+				}
+
+				Aslice := expA.FindAllStringSubmatch(s, -1)
+				Bslice := expB.FindAllStringSubmatch(s, -1)
+				for i, ss := range Bslice {
+					uri := ss[0][16 : len(ss[0])-1]
+					u, _ := url.Parse(FANTIA_BASE_URI + uri)
+					uext, _ := url.Parse(Aslice[i][0][7 : len(ss[0])-1])
+
+					path := filepath.Join(post_content_root_dir, fmt.Sprintf("%03d.%s", i+1, tp.FindAllStringSubmatch(uext.Path, -1)[0][1]))
+					SaveURIToFile(client, path, u.String())
+				}
+			default:
+				continue
 			}
 		}
 
@@ -293,3 +333,7 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 	}
 	return false, nil
 }
+
+var expA = regexp.MustCompile(`"url":".*?"`)
+var expB = regexp.MustCompile(`"original_url":".*?"`)
+var tp = regexp.MustCompile(`\.(.+)$`)
