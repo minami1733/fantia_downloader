@@ -71,31 +71,3 @@ func Test_removeDuplicateInt(t *testing.T) {
 		})
 	}
 }
-
-func Test_CutStringToLimit(t *testing.T) {
-	type args struct {
-		input string
-		limit uint
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			"long name",
-			args{
-				"downloads/Dikk0Fantia (ディッコ)/2018-10-29_085551 - ツイ垢の凍結解除されました＋予告やラフ置き場/001 - アルトリア描く予定でしたが、今日夢にアビィちゃんが出てきたので、 今週はふぁ〇きゅーとか汚い言葉をスラムで言いまくってたら路地裏に連れ込まれて FXXKされちゃうアビィちゃん描きます(＊'ω'＊)",
-				245,
-			},
-			"downloads/Dikk0Fantia (ディッコ)/2018-10-29_085551 - ツイ垢の凍結解除されました＋予告やラフ置き場/001 - アルトリア描く予定でしたが、今日夢にアビィちゃんが出てきたので、 今週はふぁ〇",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := CutStringToLimit(tt.args.input, tt.args.limit); got != tt.want {
-				t.Errorf("CutStringToLimit() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}

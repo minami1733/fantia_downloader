@@ -76,22 +76,6 @@ func removeDuplicateInt(source []int) []int {
 	return results
 }
 
-func CutStringToLimit(input string, limit uint) string {
-	if len(input) < int(limit) {
-		return strings.Trim(input, " ")
-	}
-
-	runes := []rune(input)
-
-	for idx := range runes {
-		if len(string(runes[0:idx])) > int(limit) {
-			input = string(runes[0 : idx-1])
-			break
-		}
-	}
-	return strings.Trim(input, " ")
-}
-
 func RetrySaveURIToFile(client *http.Client, file, uri string) error {
 	var err error
 	for i, interval := 1, retryInterval; i <= retry; i++ {
