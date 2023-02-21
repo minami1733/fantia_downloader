@@ -20,6 +20,7 @@ const (
 	FANTIA_API_FANCLUBS     = "https://fantia.jp/api/v1/me/fanclubs"
 	FANTIA_API_FANCLUB_INFO = "https://fantia.jp/api/v1/fanclubs/%d"
 	FANTIA_API_POST_INFO    = "https://fantia.jp/api/v1/posts/%d"
+	FANTIA_POST_CSRF_TOKEN  = "https://fantia.jp/posts/%d"
 
 	FANTIA_FANCLUB_POSTS = "https://fantia.jp/fanclubs/%d/posts?page=%d"
 

@@ -2,6 +2,7 @@ package fantia
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -14,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 func NewConfig() *Config {
@@ -207,10 +210,50 @@ func GetFanclubPage(client *http.Client, fanclub int) []int {
 
 	return reverse
 }
+func GetCsrfToken(client *http.Client, post_id int) (string, error) {
+	resp, err := client.Get(fmt.Sprintf(FANTIA_POST_CSRF_TOKEN, post_id))
+	if err != nil {
+		return "", err
+	}
+	defer HTTPResponseBodyCloser(resp)
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("")
+	}
+
+	var token string
+
+	gqdoc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	gqdoc.Find("meta").Each(func(i int, s *goquery.Selection) {
+		v, _ := s.Attr("name")
+		if v == "csrf-token" {
+			if tkn, res := s.Attr("content"); res {
+				token = tkn
+			}
+		}
+	})
+
+	return token, nil
+}
 
 func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
+	token, err := GetCsrfToken(client, post_id)
+	if err != nil {
+		return false, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(FANTIA_API_POST_INFO, post_id), nil)
+	if err != nil {
+		return false, err
+	}
+
+	req.Header.Add("x-csrf-token", token)
+
 	// 投稿を取得
-	resp, err := client.Get(fmt.Sprintf(FANTIA_API_POST_INFO, post_id))
+	resp, err := client.Do(req)
 	if err != nil {
 		return false, err
 	}
