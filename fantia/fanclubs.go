@@ -251,6 +251,7 @@ func GetPost(client *http.Client, parent string, post_id int) (bool, error) {
 	}
 
 	req.Header.Add("x-csrf-token", token)
+	req.Header.Add("x-requested-with", "XMLHttpRequest")
 
 	// 投稿を取得
 	resp, err := client.Do(req)
